@@ -10,7 +10,11 @@ import argparse
 import glob
 import yaml
 
-load_dotenv()
+ap = argparse.ArgumentParser()
+ap.add_argument('--env', type=str, default='development', help='production | development')
+args = ap.parse_args()
+
+load_dotenv(f'./.env.{args.env}')
 
 class MongoDBController:
     def __init__(self, host, port, username, password, db_name=None):
@@ -53,12 +57,7 @@ class MongoDBController:
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser()
-    ap.add_argument('--mode', type=str, default='development', help='Push to development / production db')
-
-    args = ap.parse_args()
-
-    db_name = f'{args.mode}_prompts'
+    db_name = f'{args.env}_prompts'
     mongodb = MongoDBController(
         host=os.environ['mongodb_url'],
         port=int(os.environ['mongodb_port']), 
@@ -82,8 +81,9 @@ if __name__ == '__main__':
                 prefix = prompt['prefix']
                 suffix = prompt['suffix']
 
-            if prefix in df['prefix'].tolist() and suffix in df['suffix'].tolist():
-                continue
+            if df.shape[0] > 0:
+                if prefix in df['prefix'].tolist() and suffix in df['suffix'].tolist():
+                    continue
 
             prefix_token_count = len(sp.encode(prefix))
             suffix_token_count = len(sp.encode(suffix))
